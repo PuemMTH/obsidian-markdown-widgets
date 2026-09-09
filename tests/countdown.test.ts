@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CountdownConfigError } from "../src/widgets/countdown/model";
 import { parseCountdownConfig } from "../src/widgets/countdown/parser";
 import { calculateCountdown } from "../src/widgets/countdown/time";
+import { findInlineCountdownTokens } from "../src/widgets/countdown/inline-syntax";
+import { formatInlineCountdown } from "../src/widgets/countdown/inline-renderer";
 
 describe("parseCountdownConfig", () => {
   it("parses a complete countdown block", () => {
@@ -33,6 +35,12 @@ describe("parseCountdownConfig", () => {
       parseCountdownConfig("date: 2026-12-31T23:59:59Z\ntitel: Typo"),
     ).toThrowError(CountdownConfigError);
   });
+
+  it("rejects calendar dates that JavaScript would otherwise roll forward", () => {
+    expect(() => parseCountdownConfig("2026-02-30T12:00:00+07:00")).toThrowError(
+      CountdownConfigError,
+    );
+  });
 });
 
 describe("calculateCountdown", () => {
@@ -60,5 +68,35 @@ describe("calculateCountdown", () => {
       seconds: 0,
       complete: true,
     });
+  });
+});
+
+describe("inline countdown placeholders", () => {
+  it("finds multiple valid placeholders with document positions", () => {
+    const text =
+      "เริ่ม %{count: 2026-12-31}% และ %{count: 2027-01-01T00:00:00+07:00}%";
+    const tokens = findInlineCountdownTokens(text, 10);
+
+    expect(tokens).toHaveLength(2);
+    expect(tokens[0].from).toBe(16);
+    expect(tokens[0].expression).toBe("2026-12-31");
+    expect(tokens[1].target.toISOString()).toBe("2026-12-31T17:00:00.000Z");
+  });
+
+  it("leaves incomplete or invalid placeholders as plain text", () => {
+    expect(findInlineCountdownTokens("%{count: day or time}%")).toEqual([]);
+    expect(findInlineCountdownTokens("%{count: 2026-12")).toEqual([]);
+  });
+
+  it("formats days and clock time compactly", () => {
+    expect(
+      formatInlineCountdown({
+        days: 2,
+        hours: 3,
+        minutes: 4,
+        seconds: 5,
+        complete: false,
+      }),
+    ).toBe("2 วัน 03:04:05");
   });
 });

@@ -1,7 +1,7 @@
 {
   "id": "markdown-widgets",
   "name": "Markdown Widgets",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "0.15.0",
   "description": "Add live, configurable widgets such as countdowns to Markdown notes.",
   "author": "Puem",

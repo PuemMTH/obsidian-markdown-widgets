@@ -1,0 +1,166 @@
+import { syntaxTree } from "@codemirror/language";
+import { RangeSetBuilder } from "@codemirror/state";
+import {
+  Decoration,
+  DecorationSet,
+  EditorView,
+  PluginValue,
+  ViewPlugin,
+  ViewUpdate,
+  WidgetType,
+} from "@codemirror/view";
+import { editorLivePreviewField, MarkdownRenderChild, Plugin } from "obsidian";
+import type { MarkdownWidget } from "../widget";
+import { findInlineCountdownTokens } from "./inline-syntax";
+import { mountInlineCountdown } from "./inline-renderer";
+
+const cleanupByElement = new WeakMap<HTMLElement, () => void>();
+
+class InlineCountdownEditorWidget extends WidgetType {
+  constructor(private readonly targetTimestamp: number) {
+    super();
+  }
+
+  eq(other: InlineCountdownEditorWidget): boolean {
+    return this.targetTimestamp === other.targetTimestamp;
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const element = view.dom.ownerDocument.createElement("span");
+    element.contentEditable = "false";
+    cleanupByElement.set(element, mountInlineCountdown(element, new Date(this.targetTimestamp)));
+    return element;
+  }
+
+  destroy(element: HTMLElement): void {
+    cleanupByElement.get(element)?.();
+    cleanupByElement.delete(element);
+  }
+
+  ignoreEvent(): boolean {
+    return false;
+  }
+}
+
+function selectionTouchesToken(view: EditorView, from: number, to: number): boolean {
+  return view.state.selection.ranges.some((range) => {
+    if (range.empty) {
+      return range.from >= from && range.from <= to;
+    }
+    return range.from < to && range.to > from;
+  });
+}
+
+function isInsideCode(view: EditorView, position: number): boolean {
+  let node = syntaxTree(view.state).resolveInner(position, 1);
+  while (node) {
+    if (node.name.toLowerCase().includes("code")) {
+      return true;
+    }
+    if (!node.parent) {
+      break;
+    }
+    node = node.parent;
+  }
+  return false;
+}
+
+function buildDecorations(view: EditorView): DecorationSet {
+  if (!view.state.field(editorLivePreviewField, false)) {
+    return Decoration.none;
+  }
+
+  const builder = new RangeSetBuilder<Decoration>();
+  for (const { from, to } of view.visibleRanges) {
+    const text = view.state.doc.sliceString(from, to);
+    for (const token of findInlineCountdownTokens(text, from)) {
+      if (
+        !selectionTouchesToken(view, token.from, token.to) &&
+        !isInsideCode(view, token.from)
+      ) {
+        builder.add(
+          token.from,
+          token.to,
+          Decoration.replace({
+            widget: new InlineCountdownEditorWidget(token.target.getTime()),
+          }),
+        );
+      }
+    }
+  }
+  return builder.finish();
+}
+
+class InlineCountdownViewPlugin implements PluginValue {
+  decorations: DecorationSet;
+
+  constructor(view: EditorView) {
+    this.decorations = buildDecorations(view);
+  }
+
+  update(update: ViewUpdate): void {
+    if (update.docChanged || update.viewportChanged || update.selectionSet) {
+      this.decorations = buildDecorations(update.view);
+    }
+  }
+}
+
+const inlineCountdownEditorExtension = ViewPlugin.fromClass(InlineCountdownViewPlugin, {
+  decorations: (value) => value.decorations,
+});
+
+class InlineCountdownMarkdownChild extends MarkdownRenderChild {
+  onload(): void {
+    const ownerDocument = this.containerEl.ownerDocument;
+    const walker = ownerDocument.createTreeWalker(this.containerEl, 4);
+    const textNodes: Text[] = [];
+    let currentNode = walker.nextNode();
+
+    while (currentNode) {
+      if (currentNode.nodeType === 3) {
+        textNodes.push(currentNode as Text);
+      }
+      currentNode = walker.nextNode();
+    }
+
+    for (const textNode of textNodes) {
+      const parent = textNode.parentElement;
+      if (
+        !parent ||
+        parent.closest(
+          "code, pre, a, .markdown-widgets-countdown, .markdown-widgets-inline-countdown",
+        )
+      ) {
+        continue;
+      }
+
+      const text = textNode.data;
+      const tokens = findInlineCountdownTokens(text);
+      if (tokens.length === 0) {
+        continue;
+      }
+
+      const fragment = ownerDocument.createDocumentFragment();
+      let cursor = 0;
+      for (const token of tokens) {
+        fragment.append(text.slice(cursor, token.from));
+        const element = ownerDocument.createElement("span");
+        this.register(mountInlineCountdown(element, token.target));
+        fragment.append(element);
+        cursor = token.to;
+      }
+      fragment.append(text.slice(cursor));
+      textNode.replaceWith(fragment);
+    }
+  }
+}
+
+export const inlineCountdownWidget: MarkdownWidget = {
+  id: "inline-countdown",
+  register(plugin: Plugin): void {
+    plugin.registerEditorExtension(inlineCountdownEditorExtension);
+    plugin.registerMarkdownPostProcessor((element, context) => {
+      context.addChild(new InlineCountdownMarkdownChild(element));
+    });
+  },
+};

@@ -41,5 +41,14 @@ export default class MarkdownWidgetsPlugin extends Plugin {
         editor.replaceSelection(block);
       },
     });
+
+    this.addCommand({
+      id: "insert-inline-countdown",
+      name: "Insert inline countdown placeholder",
+      editorCallback: (editor) => {
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1_000);
+        editor.replaceSelection(`%{count: ${toLocalIsoWithOffset(tomorrow)}}%`);
+      },
+    });
   }
 }

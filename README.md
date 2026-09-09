@@ -3,6 +3,30 @@
 ปลั๊กอินสำหรับเพิ่ม widget ที่อัปเดตสดลงใน Markdown โดยเริ่มจาก `countdown`
 และวางโครงให้เพิ่ม widget ชนิดใหม่ภายหลังได้โดยไม่ต้องแก้ระบบเดิมทั้งหมด
 
+## Inline countdown placeholder
+
+พิมพ์ placeholder ไว้ตรงไหนของประโยคก็ได้:
+
+```md
+ส่งงานในอีก %{count: 2026-12-31T23:59:59+07:00}% ก่อนปิดระบบ
+```
+
+ใน Live Preview และ Reading View ตัว placeholder จะกลายเป็น countdown ขนาดเล็ก
+โดย syntax ต้นฉบับยังอยู่ในไฟล์ `.md` ตามเดิม เมื่อวาง cursor แตะ placeholder ใน
+Live Preview ระบบจะแสดง syntax กลับมาให้แก้ไข
+
+รองรับทั้งวันที่และวันพร้อมเวลา:
+
+```md
+%{count: 2026-12-31}%
+%{count: 2026-12-31 18:30}%
+%{count: 2026-12-31T18:30:00+07:00}%
+```
+
+ถ้าไม่ระบุ timezone จะใช้ timezone ของอุปกรณ์ แนะนำให้ใส่ `+07:00` เมื่อต้องการ
+ให้แสดงตรงกันทุกอุปกรณ์ หรือเลือก **Markdown Widgets: Insert inline countdown
+placeholder** จาก Command Palette
+
 ## Countdown
 
 ใส่ fenced code block นี้ในโน้ต:
