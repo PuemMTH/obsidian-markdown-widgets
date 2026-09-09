@@ -26,5 +26,8 @@
     "obsidian": "latest",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "mathjax-full": "^3.2.2"
   }
 }

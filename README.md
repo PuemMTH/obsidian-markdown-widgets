@@ -113,6 +113,32 @@ pnpm build
 
 จากนั้นเปิด **Settings → Community plugins** แล้วเปิดใช้งาน **Markdown Widgets**
 
+## Copy equation (MathJax)
+
+คลิกขวาที่สมการที่ render แล้ว (`$...$` หรือ `$$...$$`) จะได้เมนู 3 อย่าง
+
+| เมนู | ผลลัพธ์ |
+| :-- | :-- |
+| **Copy equation as image** | PNG พื้นหลังขาว ตัวอักษรดำ ขยาย 3× ลงคลิปบอร์ด |
+| **Copy equation as SVG** | SVG เวกเตอร์ลงคลิปบอร์ดเป็น `image/svg+xml` (Inkscape / Illustrator paste ได้) |
+| **Save equation as SVG…** | เปิด save dialog เขียนเป็นไฟล์ `.svg` |
+
+ข้อจำกัดที่กำหนดวิธี implement:
+
+- Obsidian ฝัง MathJax มาเฉพาะตัว **CommonHTML** (`tex-chtml-full.js`) ไม่มี SVG output
+  ปลั๊กอินจึง bundle ตัว SVG renderer ของ MathJax เข้ามาเองในรูป **module** ไม่ใช่ script
+  เพื่อไม่ให้ทับ `window.MathJax` ที่ Obsidian ใช้ render สมการอยู่ (`main.js` จึงใหญ่ ~1.8 MB)
+- SVG ใช้ `fontCache: "local"` ให้ glyph ทุกตัวอยู่ใน `<svg>` เดียว ไฟล์จึง self-contained
+- Obsidian ลบ LaTeX ต้นฉบับออกจาก DOM หลัง `tex2chtml` ปลั๊กอินจึงย้อนหา source สองทาง คือ
+  `posAtDOM` ของ CodeMirror ใน Live Preview และ post-processor ที่แปะ `data-mw-tex`
+  จาก section source ใน Reading View ถ้าจำนวนสมการไม่ตรงกันจะไม่แปะเลย แล้วรายงาน error
+  แทนที่จะเดาว่าสมการไหนคู่กับอันไหน
+- PNG ใช้ `webContents.capturePage()` โดย clone สมการไปวางใน overlay ชั่วคราวที่คุมพื้นหลังเอง
+  และตั้ง `zoom` ให้ CHTML layout ใหม่ที่ 3× (คมจริง ไม่ใช่ขยายภาพ)
+
+ต้องใช้ Obsidian เวอร์ชันเดสก์ท็อป เพราะทั้งการจับภาพและการเขียนคลิปบอร์ดแบบ `image/svg+xml`
+ผ่าน Electron
+
 ## Verify release provenance
 
 GitHub Release assets ถูก build และลงนามด้วย GitHub Artifact Attestations ผู้ใช้สามารถ
