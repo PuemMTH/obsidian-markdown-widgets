@@ -1,6 +1,6 @@
 {
   "name": "obsidian-markdown-widgets",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Extensible Markdown widgets for Obsidian, starting with a live countdown.",
   "main": "main.js",
   "type": "module",
