@@ -97,6 +97,168 @@
   color: var(--text-success);
 }
 
+.markdown-widgets-inline-countdown.is-interactive {
+  cursor: pointer;
+}
+
+.markdown-widgets-inline-countdown.is-interactive:hover,
+.markdown-widgets-inline-countdown.is-interactive:focus-visible {
+  background: var(--background-modifier-hover);
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+  outline: none;
+}
+
+.markdown-widgets-picker__form,
+.markdown-widgets-picker__field {
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-widgets-picker__form {
+  gap: 0.75rem;
+}
+
+.markdown-widgets-picker__field {
+  gap: 0.4rem;
+}
+
+.markdown-widgets-picker__field label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+}
+
+.markdown-widgets-picker__input {
+  width: 100%;
+  min-height: var(--input-height);
+}
+
+.markdown-widgets-picker__hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.markdown-widgets-picker__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.markdown-widgets-picker__preset {
+  padding: 0.25rem 0.65rem;
+  font-size: var(--font-ui-smaller);
+}
+
+.markdown-widgets-picker__feedback {
+  min-height: 2.7em;
+}
+
+.markdown-widgets-picker__error,
+.markdown-widgets-picker__preview {
+  font-size: var(--font-ui-smaller);
+  line-height: 1.35;
+}
+
+.markdown-widgets-picker__error {
+  color: var(--text-error);
+}
+
+.markdown-widgets-picker__preview {
+  color: var(--text-success);
+  overflow-wrap: anywhere;
+}
+
+.markdown-widgets-picker__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.markdown-widgets-sidebar {
+  padding: 0.75rem;
+}
+
+.markdown-widgets-sidebar__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0.25rem 0.65rem;
+}
+
+.markdown-widgets-sidebar__header h4 {
+  margin: 0;
+}
+
+.markdown-widgets-sidebar__summary,
+.markdown-widgets-sidebar__section-title,
+.markdown-widgets-sidebar__empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.markdown-widgets-sidebar__section + .markdown-widgets-sidebar__section {
+  margin-top: 1rem;
+}
+
+.markdown-widgets-sidebar__section-title {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding: 0.25rem 0.35rem 0.45rem;
+  font-weight: var(--font-semibold);
+}
+
+.markdown-widgets-sidebar__item {
+  border-radius: var(--radius-m);
+  padding: 0.65rem;
+  cursor: pointer;
+}
+
+.markdown-widgets-sidebar__item:hover,
+.markdown-widgets-sidebar__item:focus-visible {
+  background: var(--background-modifier-hover);
+  outline: none;
+}
+
+.markdown-widgets-sidebar__item-label {
+  overflow: hidden;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-medium);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markdown-widgets-sidebar__item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.markdown-widgets-sidebar__item-file,
+.markdown-widgets-sidebar__item-time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markdown-widgets-sidebar__remaining {
+  margin-top: 0.4rem;
+  color: var(--text-accent);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-semibold);
+}
+
+.markdown-widgets-sidebar__empty {
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+}
+
 @media (max-width: 400px) {
   .markdown-widgets-countdown__units {
     grid-template-columns: repeat(2, minmax(0, 1fr));

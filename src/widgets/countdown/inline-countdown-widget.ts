@@ -9,26 +9,64 @@ import {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import { editorLivePreviewField, MarkdownRenderChild, Plugin } from "obsidian";
+import { editorLivePreviewField, MarkdownRenderChild, Notice, Plugin } from "obsidian";
 import type { MarkdownWidget } from "../widget";
+import { CountdownDateTimePickerModal } from "./date-time-picker";
 import { findInlineCountdownTokens } from "./inline-syntax";
 import { mountInlineCountdown } from "./inline-renderer";
+import { toLocalIsoWithOffset } from "./time";
 
 const cleanupByElement = new WeakMap<HTMLElement, () => void>();
 
 class InlineCountdownEditorWidget extends WidgetType {
-  constructor(private readonly targetTimestamp: number) {
+  constructor(
+    private readonly plugin: Plugin,
+    private readonly targetTimestamp: number,
+    private readonly from: number,
+    private readonly to: number,
+  ) {
     super();
   }
 
   eq(other: InlineCountdownEditorWidget): boolean {
-    return this.targetTimestamp === other.targetTimestamp;
+    return (
+      this.targetTimestamp === other.targetTimestamp &&
+      this.from === other.from &&
+      this.to === other.to
+    );
   }
 
   toDOM(view: EditorView): HTMLElement {
     const element = view.dom.ownerDocument.createElement("span");
     element.contentEditable = "false";
-    cleanupByElement.set(element, mountInlineCountdown(element, new Date(this.targetTimestamp)));
+    const target = new Date(this.targetTimestamp);
+    cleanupByElement.set(
+      element,
+      mountInlineCountdown(element, target, {
+        onActivate: () => {
+          new CountdownDateTimePickerModal(this.plugin.app, {
+            title: "แก้ไขวันและเวลา Countdown",
+            submitLabel: "บันทึก",
+            initialDate: target,
+            onSubmit: (nextTarget) => {
+              const currentSource = view.state.doc.sliceString(this.from, this.to);
+              if (!currentSource.startsWith("%{count:") || !currentSource.endsWith("}%")) {
+                new Notice("ไม่พบ countdown ตำแหน่งเดิม กรุณาลองใหม่");
+                return;
+              }
+
+              const replacement = `%{count: ${toLocalIsoWithOffset(nextTarget)}}%`;
+              view.dispatch({
+                changes: { from: this.from, to: this.to, insert: replacement },
+                selection: { anchor: this.from + replacement.length },
+                scrollIntoView: true,
+              });
+              view.focus();
+            },
+          }).open();
+        },
+      }),
+    );
     return element;
   }
 
@@ -37,8 +75,8 @@ class InlineCountdownEditorWidget extends WidgetType {
     cleanupByElement.delete(element);
   }
 
-  ignoreEvent(): boolean {
-    return false;
+  ignoreEvent(event: Event): boolean {
+    return event.type === "mousedown" || event.type === "click";
   }
 }
 
@@ -65,7 +103,7 @@ function isInsideCode(view: EditorView, position: number): boolean {
   return false;
 }
 
-function buildDecorations(view: EditorView): DecorationSet {
+function buildDecorations(view: EditorView, plugin: Plugin): DecorationSet {
   if (!view.state.field(editorLivePreviewField, false)) {
     return Decoration.none;
   }
@@ -82,7 +120,12 @@ function buildDecorations(view: EditorView): DecorationSet {
           token.from,
           token.to,
           Decoration.replace({
-            widget: new InlineCountdownEditorWidget(token.target.getTime()),
+            widget: new InlineCountdownEditorWidget(
+              plugin,
+              token.target.getTime(),
+              token.from,
+              token.to,
+            ),
           }),
         );
       }
@@ -94,20 +137,26 @@ function buildDecorations(view: EditorView): DecorationSet {
 class InlineCountdownViewPlugin implements PluginValue {
   decorations: DecorationSet;
 
-  constructor(view: EditorView) {
-    this.decorations = buildDecorations(view);
+  constructor(
+    view: EditorView,
+    private readonly plugin: Plugin,
+  ) {
+    this.decorations = buildDecorations(view, plugin);
   }
 
   update(update: ViewUpdate): void {
     if (update.docChanged || update.viewportChanged || update.selectionSet) {
-      this.decorations = buildDecorations(update.view);
+      this.decorations = buildDecorations(update.view, this.plugin);
     }
   }
 }
 
-const inlineCountdownEditorExtension = ViewPlugin.fromClass(InlineCountdownViewPlugin, {
-  decorations: (value) => value.decorations,
-});
+function createInlineCountdownEditorExtension(plugin: Plugin): ViewPlugin<InlineCountdownViewPlugin> {
+  return ViewPlugin.define(
+    (view) => new InlineCountdownViewPlugin(view, plugin),
+    { decorations: (value) => value.decorations },
+  );
+}
 
 class InlineCountdownMarkdownChild extends MarkdownRenderChild {
   onload(): void {
@@ -158,7 +207,7 @@ class InlineCountdownMarkdownChild extends MarkdownRenderChild {
 export const inlineCountdownWidget: MarkdownWidget = {
   id: "inline-countdown",
   register(plugin: Plugin): void {
-    plugin.registerEditorExtension(inlineCountdownEditorExtension);
+    plugin.registerEditorExtension(createInlineCountdownEditorExtension(plugin));
     plugin.registerMarkdownPostProcessor((element, context) => {
       context.addChild(new InlineCountdownMarkdownChild(element));
     });

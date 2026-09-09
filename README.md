@@ -25,7 +25,37 @@ Live Preview ระบบจะแสดง syntax กลับมาให้�
 
 ถ้าไม่ระบุ timezone จะใช้ timezone ของอุปกรณ์ แนะนำให้ใส่ `+07:00` เมื่อต้องการ
 ให้แสดงตรงกันทุกอุปกรณ์ หรือเลือก **Markdown Widgets: Insert inline countdown
-placeholder** จาก Command Palette
+with date/time picker** จาก Command Palette แล้วเลือกวันและเวลาจากหน้าต่างที่เปิดขึ้น
+
+Date/Time Picker มีทั้งช่องปฏิทินปกติและ Smart input ภาษาไทย/อังกฤษ:
+
+```text
+วันนี้ 18:30
+พรุ่งนี้
+tomorrow at 09:00
++30m
++2h
++3d
++1w 09:15
+```
+
+ถ้าไม่ระบุเวลา ระบบจะใช้ชั่วโมงและนาทีปัจจุบัน ปุ่ม preset รองรับวันนี้ พรุ่งนี้
+และอีก 7 วัน ทุกค่าจะถูกแปลงเป็น ISO พร้อม timezone ก่อนเขียนลง Markdown
+
+ใน Live Preview สามารถคลิก countdown ที่แสดงอยู่เพื่อเปิด Date/Time Picker และแก้ไข
+วันกับเวลาเดิมได้ทันที ค่าที่เลือกจะถูกเขียนกลับเข้า placeholder พร้อม timezone ของเครื่อง
+
+## Countdown sidebar
+
+เลือกไอคอนรูปนาฬิกาที่ ribbon หรือเปิด Command Palette แล้วเลือก **Markdown Widgets:
+Open countdown sidebar** เพื่อแสดงรายการ countdown ใน sidebar ด้านขวา รายการจะใช้
+ข้อความที่เหลือในบรรทัดเป็นชื่อ แสดงไฟล์และเลขบรรทัด เรียงรายการอนาคตที่ใกล้ที่สุดก่อน
+และจัดกลุ่มแบบ `ชื่อไฟล์ › Heading` โดย heading ชื่อเดียวกันจากคนละไฟล์จะไม่ถูกรวมกัน
+รายการที่เลยเวลาแล้วยังคงแสดงต่อจากรายการอนาคต คลิกรายการเพื่อเปิดโน้ตตรง placeholder
+นั้นได้ Placeholder ใน inline code และ fenced code block จะไม่ถูกนำมาแสดงใน Sidebar
+
+เพื่อให้อ่านง่าย Countdown ที่เหลือเกินหนึ่งวันจะแสดงเฉพาะวันและชั่วโมง เช่น
+`4 วัน 9 ชม.` และจะเปลี่ยนเป็น `09:47:53` เมื่อเหลือน้อยกว่าหนึ่งวัน
 
 ## Countdown
 
@@ -59,8 +89,8 @@ locale: th-TH
 ```
 ````
 
-หรือเปิด Command Palette แล้วเลือก **Markdown Widgets: Insert countdown block**
-เพื่อแทรก template ที่ตั้งเวลาเริ่มต้นเป็น 24 ชั่วโมงข้างหน้า
+หรือเปิด Command Palette แล้วเลือก **Markdown Widgets: Insert countdown block with
+date/time picker** เพื่อเลือกวันและเวลาด้วย Picker เดียวกับ Inline countdown
 
 ดูโน้ตพร้อมใช้งานได้ที่ `examples/countdown-demo.md`
 
