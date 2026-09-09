@@ -1,0 +1,87 @@
+name: Attest release assets
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to verify and attest
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+concurrency:
+  group: attest-release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  attest:
+    name: Build, compare, and attest
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Set up pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.13.0 --activate
+          pnpm --version
+
+      - name: Verify release version
+        run: |
+          manifest_version=$(node -p "require('./manifest.json').version")
+          package_version=$(node -p "require('./package.json').version")
+          test "$manifest_version" = "$package_version"
+          test "$manifest_version" = "$RELEASE_TAG"
+
+      - name: Install, test, and build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm peers check
+          pnpm test
+          pnpm build
+
+      - name: Download published release assets
+        run: |
+          mkdir release-assets
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir release-assets \
+            --pattern main.js \
+            --pattern manifest.json \
+            --pattern styles.css
+
+      - name: Compare build with published assets
+        run: |
+          cmp main.js release-assets/main.js
+          cmp manifest.json release-assets/manifest.json
+          cmp styles.css release-assets/styles.css
+          sha256sum main.js manifest.json styles.css
+
+      - name: Generate build provenance attestations
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css

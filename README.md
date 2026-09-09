@@ -83,6 +83,17 @@ pnpm build
 
 จากนั้นเปิด **Settings → Community plugins** แล้วเปิดใช้งาน **Markdown Widgets**
 
+## Verify release provenance
+
+GitHub Release assets ถูก build และลงนามด้วย GitHub Artifact Attestations ผู้ใช้สามารถ
+ตรวจสอบ provenance หลังดาวน์โหลดได้ด้วย GitHub CLI:
+
+```bash
+gh attestation verify main.js --repo PuemMTH/obsidian-markdown-widgets
+gh attestation verify manifest.json --repo PuemMTH/obsidian-markdown-widgets
+gh attestation verify styles.css --repo PuemMTH/obsidian-markdown-widgets
+```
+
 ## Adding another widget
 
 1. สร้างโมดูลใหม่ใต้ `src/widgets/<widget-name>/`
